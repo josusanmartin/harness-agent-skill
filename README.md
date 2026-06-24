@@ -2,6 +2,19 @@
 
 Codex skill for solving exercises through the local Harness middleware.
 
+This is the **agent skill repository only**. It does not contain the Harness
+server, web UI, connector implementations, database, or deployment scripts. Use
+the server repository for that:
+
+<https://github.com/josusanmartin/harness>
+
+Keep the split clear:
+
+- `josusanmartin/harness`: Harness server, admin UI, CLI, connectors,
+  credential storage, submissions, logging, and dashboards.
+- `josusanmartin/harness-agent-skill`: Codex skill payload that teaches an
+  agent how to use an already-running Harness server through scoped run tokens.
+
 The skill assumes the Harness web UI creates an exercise API key scoped to one
 user, one credential profile, one connector, and one exercise. Agents receive only:
 
@@ -10,13 +23,22 @@ export HARNESS_URL=http://127.0.0.1:8718
 export HARNESS_RUN_TOKEN=hrun_...
 ```
 
-Agents then use `harness context`, `harness exercise`, `harness run start`,
-`harness run ping`, and `harness submit`. Connector credentials stay in the
-Harness middleware.
+Agents then use the `harness` CLI provided by the server repository:
+`harness context`, `harness exercise`, `harness run start`, `harness run ping`,
+and `harness submit`. Connector credentials stay in the Harness middleware.
 
 ## Install
 
-From this repo:
+Clone this skill repo and install only the skill folder:
+
+```bash
+git clone https://github.com/josusanmartin/harness-agent-skill.git
+cd harness-agent-skill
+mkdir -p ~/.codex/skills
+rsync -a skills/harness-agent/ ~/.codex/skills/harness-agent/
+```
+
+Or, from an existing checkout:
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -30,6 +52,22 @@ Install the harness-agent skill from josusanmartin/harness-agent-skill, path ski
 ```
 
 Restart Codex after installing.
+
+## Server Setup
+
+Do not use this repository to run the Harness server. Install and run the server
+from:
+
+<https://github.com/josusanmartin/harness>
+
+The normal flow is:
+
+1. Start the Harness server from the `harness` repository.
+2. Log in to the Harness web UI.
+3. Save connector credentials in the web UI.
+4. Create an exercise API key in the web UI.
+5. Give the generated environment block to the solving agent.
+6. Tell the agent to use the `harness-agent` skill.
 
 ## Update
 

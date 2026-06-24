@@ -9,6 +9,13 @@ Use this skill when solving an exercise through the local Harness middleware.
 The harness owns connector credentials and submissions; the agent only talks to
 `harnessd`.
 
+This skill is not the Harness server. It assumes the user has already installed
+and started the server from `https://github.com/josusanmartin/harness` and has
+provided a scoped `HARNESS_RUN_TOKEN`. If the `harness` CLI is missing or
+`HARNESS_URL` / `HARNESS_RUN_TOKEN` are not available, stop and report that the
+Harness server setup or exercise API key is missing. Do not clone or run this
+skill repository as the server.
+
 ## Harness Context
 
 Do not ask the user for connector API keys, cookies, credential paths, or
