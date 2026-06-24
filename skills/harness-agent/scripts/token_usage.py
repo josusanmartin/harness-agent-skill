@@ -13,7 +13,7 @@ DEFAULT_STATE = ".harness-token-usage.json"
 def load_state(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise SystemExit(
-            f"token usage baseline missing: run this first after harness run start:\n"
+            f"token usage baseline missing: run this first after the harness run is established:\n"
             f"  {Path(__file__).name} start --total-tokens <current_exact_tokens> --source <source>"
         )
     loaded = json.loads(path.read_text(encoding="utf-8"))
@@ -175,7 +175,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare trustworthy harness token flags")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    start = sub.add_parser("start", help="store the token baseline immediately after harness run start")
+    start = sub.add_parser("start", help="store the token baseline immediately after the harness run is established")
     add_total_args(start)
     start.set_defaults(func=cmd_start)
 

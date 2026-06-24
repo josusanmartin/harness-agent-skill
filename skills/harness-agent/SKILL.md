@@ -37,11 +37,11 @@ harness context
 
 The token is never printed. For the preferred web-issued workflow,
 `harness context` must show a server scope with `kind=run_token`, `user_name`,
-`connector`, `exercise`, and `credential_profile`. If a user expected a web-issued
-exercise API key but that scoped context is missing, stop and report that the
-harness exercise API key is required. Legacy workspace contexts may show
-`kind=arm_token`; use them only for existing harness workspaces that already
-have an active arm context.
+`connector`, `exercise`, `credential_profile`, `run_id`, `run_name`, and
+`needs_run_name`. If a user expected a web-issued exercise API key but that
+scoped context is missing, stop and report that the harness exercise API key is
+required. Legacy workspace contexts may show `kind=arm_token`; use them only for
+existing harness workspaces that already have an active arm context.
 
 Connector credentials are stored on the middleware side.
 The Harness UI can store many named credential profiles per connector, but the
@@ -68,7 +68,7 @@ Use the bundled helper to make token accounting deterministic:
 HARNESS_TOKEN_HELPER="${CODEX_HOME:-$HOME/.codex}/skills/harness-agent/scripts/token_usage.py"
 ```
 
-Immediately after `harness run start`, capture a baseline from the first exact
+Immediately after the run is established, capture a baseline from the first exact
 source available:
 
 - **Codex with `get_goal` tool**: call `get_goal` once. If it returns a current
@@ -145,7 +145,16 @@ harness exercise
 If the user explicitly asks for a different problem than the run default, pass
 that problem with `--exercise`, but normal runs should not need this.
 
-3. Choose and start a run before submitting:
+3. Establish the run before submitting. If `harness context` shows
+   `needs_run_name: false` or a non-empty `run_id`, the token is already bound
+   to a run; inspect it and keep using that exact run:
+
+```bash
+harness run current
+```
+
+Do not try to switch a pre-bound run token to another run id. If the token needs
+a run name, choose and start one:
 
 ```bash
 harness run start --id run001
@@ -194,7 +203,11 @@ counter is available, report that token accounting is blocked and do not submit
 candidates for this run.
 
 6. Work in the current agent workspace. Keep candidate files small and scoped to
-the actual solution.
+the actual solution. `harness submit` accepts either one file or a directory. If
+submitting a directory or multi-file solution, include only required source files
+and pass `--solution-file` when the connector needs an entrypoint path inside
+the bundle. Never include secrets, credential files, large build artifacts,
+cache directories, or unrelated scratch files.
 
 7. Capture a token snapshot before every submission using the token accounting
    helper above. Keep provenance honest. Do not delay a simple first candidate
@@ -214,11 +227,53 @@ harness submit path/to/solution \
   $TOKEN_FLAGS
 ```
 
+Connector-specific overrides are allowed when they are part of the exercise
+setup or user request. Examples:
+
+```bash
+# HighLoad C++ example
+harness submit path/to/solution \
+  --label short-name \
+  --notes "what changed" \
+  --idempotency-key short-name-v1 \
+  --language CPP \
+  --compiler g++14.2.0 \
+  --compiler-options "-O3 -march=native" \
+  $TOKEN_FLAGS
+
+# CPU.mode example
+harness submit path/to/solution \
+  --label short-name \
+  --notes "what changed" \
+  --idempotency-key short-name-v1 \
+  --language cpp \
+  --compiler gcc_cpp \
+  --system raptor_cove_p \
+  $TOKEN_FLAGS
+
+# Multi-file bundle example
+harness submit path/to/solution-dir \
+  --label short-name \
+  --notes "what changed" \
+  --idempotency-key short-name-v1 \
+  --solution-file src/main.cpp \
+  $TOKEN_FLAGS
+```
+
+Use only relevant overrides. Do not invent connector options, and do not use
+`--exercise` to escape the scoped exercise in the run token. If the user asks
+for a different exercise than the token scope, ask for a new exercise API key.
+
 Do not pass `--tokens-delta` manually; the harness computes deltas from the
 run-relative cumulative total. Do not pass any timing fields; the harness
 derives elapsed time from server timestamps and `harness run ping`. Do not
 fabricate usage fields. If no token counter is available after the quick
 supported checks, do not submit.
+
+Use `--idempotency-key` as the retry key for the same candidate bundle and same
+exercise. Reuse it only when retrying the exact same submission after a network,
+timeout, or uncertain response. Use a new idempotency key when source, compiler,
+system, exercise, or other submission semantics change.
 
 9. Inspect feedback and refresh queued submissions through the harness:
 
@@ -228,9 +283,18 @@ harness history
 harness refresh
 ```
 
-Use `harness refresh <candidate_id>` when you need to refresh a specific
-submitted candidate. If the connector exposes source retrieval through the harness,
-use `harness solution <solution_id>` rather than calling the connector directly.
+If `harness submit` returns a pending/submitted/checking status or a connector
+solution id without a final score, do not resubmit just to check status. Run
+`harness refresh` for the latest refreshable candidate, or
+`harness refresh <candidate_id>` when you need a specific submitted candidate.
+Some connectors can take minutes to complete; keep refreshing through the
+harness until the candidate reaches a terminal scored or failed state. If
+`refresh` says there is no refreshable solution id, inspect `harness history`;
+only create a new submission if the previous attempt failed before reaching the
+connector or the content/semantics truly changed.
+
+If the connector exposes source retrieval through the harness, use
+`harness solution <solution_id>` rather than calling the connector directly.
 
 For PR-backed connectors, this is still the full workflow. The middleware decides
 whether the candidate becomes a local harness run, an API submission, or a
@@ -245,8 +309,9 @@ GitHub pull request.
   bound into the web-issued exercise API key.
 - Do not compare against or inspect other credential profiles or runs unless
   the harness response for the current token exposes that data.
-- Do choose exactly one run id before the first submission, then keep using it
-  for that run.
+- Ensure there is exactly one active run id before the first submission. If the
+  token is pre-bound to a run, use that run; otherwise choose one with
+  `harness run start --id ...`. Keep using the same run id for that run.
 - If the strategy, model, tool access, prompt, or experimental condition
   materially changes, ask whether this is a continuation or start a new run only
   with explicit confirmation from the harness/user.
@@ -255,4 +320,7 @@ GitHub pull request.
 - Keep `--notes` factual: hypothesis, result, important failure, or connector id.
 - Use `--label` to make deterministic progress logs readable.
 - Use `--idempotency-key` for retries of the same candidate.
+- When a harness command fails, preserve the exact error message and
+  `trace_id` if present. Fix the harness-facing issue instead of bypassing the
+  harness with an external connector CLI/API.
 - If a submit error is unclear, read `docs/middleware-protocol.md` before retrying.
