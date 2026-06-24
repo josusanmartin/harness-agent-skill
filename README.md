@@ -1,17 +1,18 @@
 # Harness Agent Skill
 
-Codex skill for solving challenges through the local Harness middleware.
+Codex skill for solving exercises through the local Harness middleware.
 
 The skill assumes the Harness web UI creates an exercise API key scoped to one
-user, one credential profile, one venue, and one exercise. Agents receive only:
+user, one credential profile, one connector, and one exercise. Agents receive only:
 
 ```bash
 export HARNESS_URL=http://127.0.0.1:8718
 export HARNESS_RUN_TOKEN=hrun_...
 ```
 
-Agents then use `harness context`, `harness challenge`, `harness run start`,
-and `harness submit`. Venue credentials stay in the Harness middleware.
+Agents then use `harness context`, `harness exercise`, `harness run start`,
+`harness run ping`, and `harness submit`. Connector credentials stay in the
+Harness middleware.
 
 ## Install
 
