@@ -27,6 +27,24 @@ Agents then use the `harness` CLI provided by the server repository:
 `harness context`, `harness exercise`, `harness run start`, `harness run ping`,
 and `harness submit`. Connector credentials stay in the Harness middleware.
 
+If the solving environment does not already have `harness` on `PATH`, the skill
+includes a bootstrap helper that installs the CLI from the server repository:
+
+```bash
+HARNESS_CLI_BOOTSTRAP="${CODEX_HOME:-$HOME/.codex}/skills/harness-agent/scripts/install_harness_cli.sh"
+bash "$HARNESS_CLI_BOOTSTRAP"
+export PATH="$HOME/.local/bin:$PATH"
+harness --help
+```
+
+For private server checkouts or machines without GitHub access, provide the
+server repo explicitly:
+
+```bash
+export HARNESS_REPO=/path/to/harness-server-checkout
+bash "$HARNESS_CLI_BOOTSTRAP"
+```
+
 ## Install
 
 Clone this skill repo and install only the skill folder:
