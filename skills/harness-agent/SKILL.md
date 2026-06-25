@@ -164,11 +164,14 @@ source available:
   TOKEN_FLAGS="$(python3 "$HARNESS_TOKEN_HELPER" flags --claude-jsonl "$CLAUDE_CODE_JSONL" --source claude_code_jsonl --confidence parsed)"
   ```
 
-  The helper sums exact `message.usage` fields from that session:
-  `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, and
-  `cache_read_input_tokens`. The run-start baseline makes the value
-  run-relative. Do not parse old Claude transcripts or unrelated project
-  sessions.
+  The helper sums exact distinct-token `message.usage` fields from that
+  session: `input_tokens`, `output_tokens`, and
+  `cache_creation_input_tokens`. It deliberately excludes
+  `cache_read_input_tokens`: Claude Code may reread the same cached context on
+  every turn, and counting that field as fresh token expenditure can inflate a
+  100k-token run into a multi-million-token run. The run-start baseline makes
+  the value run-relative. Do not parse old Claude transcripts or unrelated
+  project sessions.
 - **Gemini CLI**: use the exact visible `/stats` token total if it is shown. If
   it cannot be read exactly, stop before submitting.
 - **Provider/API runner**: use provider `usage` fields summed cumulatively for

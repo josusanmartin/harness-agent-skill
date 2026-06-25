@@ -69,17 +69,20 @@ def codex_jsonl_total(path: Path) -> int:
 
 
 def claude_usage_total(usage: dict[str, Any]) -> int | None:
-    fields = (
+    distinct_fields = (
         "input_tokens",
         "output_tokens",
         "cache_creation_input_tokens",
-        "cache_read_input_tokens",
         "cache_creation_tokens",
+    )
+    cache_read_fields = (
+        "cache_read_input_tokens",
         "cache_read_tokens",
     )
-    values = [usage.get(field) for field in fields]
-    if any(isinstance(value, int) for value in values):
-        return sum(value for value in values if isinstance(value, int))
+    distinct_values = [usage.get(field) for field in distinct_fields]
+    cache_read_values = [usage.get(field) for field in cache_read_fields]
+    if any(isinstance(value, int) for value in (*distinct_values, *cache_read_values)):
+        return sum(value for value in distinct_values if isinstance(value, int))
     return usage_total(usage)
 
 
