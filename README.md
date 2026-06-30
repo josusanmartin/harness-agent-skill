@@ -41,6 +41,10 @@ harness admin launch \
   --goal 'Without using the problem agnostic skill, solve leaky-relu for 3 hours and target <100us. Do not use exploits. Use the harness skill to submit.'
 ```
 
+`harness admin login` opens or prints a browser authorization link. If the
+coordinator is already signed in to the Harness UI, click `Authorize CLI`;
+otherwise log in on the web page first and it returns to authorization.
+
 The launcher writes isolated per-run prompt files and starts tmux windows in the
 current tmux session by default. Add `--new-tmux-session --tmux-session <name>`
 to create a detached session instead.

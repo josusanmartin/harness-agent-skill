@@ -105,6 +105,11 @@ harness admin login --url https://harness.example.com --username admin
 harness admin whoami
 ```
 
+This opens or prints a browser authorization link. If the coordinator is
+already signed in to the Harness UI, click `Authorize CLI`; otherwise log in on
+the web page first and it returns to authorization. Use `--password-stdin` only
+for supervised automation.
+
 For parallel work, prefer the built-in launcher. It creates one scoped run key
 per worker, writes an isolated prompt file per run, and starts one tmux window
 per worker. By default it targets the current tmux session. Use
